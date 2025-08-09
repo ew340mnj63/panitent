@@ -2,14 +2,14 @@
 
 #include "win32/window.h"
 #include "win32/util.h"
-#include "FloatingWindowContainer.h"
+#include "floatingwindowcontainer.h"
 #include "resource.h"
 #include "toolwndframe.h"
 #include "panitentapp.h"
 #include "util/assert.h"
 
 #define HTPIN 22
-#define HTMORE 23
+#define HTWINDOWPOS 23
 
 static const WCHAR szClassName[] = L"__FloatingWindowContainer";
 
@@ -116,7 +116,7 @@ CaptionButton g_captionButtons[] = {
     {
         { 24, 14 },
         GLYPH_MORE,
-        HTMORE
+        HTWINDOWPOS
     }
 };
 
@@ -340,8 +340,10 @@ void FloatingWindowContainer_OnDestroy(FloatingWindowContainer* window)
 }
 
 
-#define IDM_UNPIN 1001
+#define IDM_AUTOHIDE 1001
 #define IDM_CLOSE 1002
+#define IDM_DOCK 1003
+#define IDM_FLOAT 1004
 
 LRESULT FloatingWindowContainer_OnNCLButtonDown(FloatingWindowContainer* pFloatingWindowContainer, UINT hitTestVal, int x, int y)
 {
@@ -355,16 +357,16 @@ LRESULT FloatingWindowContainer_OnNCLButtonDown(FloatingWindowContainer* pFloati
     }
     else if (hitTestVal == HTPIN)
     {
-        SendMessage(pFloatingWindowContainer->base.hWnd, WM_COMMAND, MAKEWPARAM(IDM_UNPIN, 0), NULL);
+        SendMessage(pFloatingWindowContainer->base.hWnd, WM_COMMAND, MAKEWPARAM(IDM_AUTOHIDE, 0), NULL);
         return TRUE;
     }
-    else if (hitTestVal == HTMORE)
+    else if (hitTestVal == HTWINDOWPOS)
     {
         HMENU hPopup = CreatePopupMenu();
-        InsertMenu(hPopup, 0, 0, IDM_UNPIN, L"Unpin");
-        InsertMenu(hPopup, 0, 0, IDM_CLOSE, L"Close");
-
+        InsertMenu(hPopup, 0, 0, IDM_DOCK, L"Dock");
+        InsertMenu(hPopup, 0, 0, IDM_FLOAT, L"Float");
         TrackPopupMenu(hPopup, 0, x, y, 0, pFloatingWindowContainer->base.hWnd, NULL);
+        DestroyMenu(hPopup);
         return TRUE;
     }
     else if (dwStyle & WS_CHILD && hitTestVal == HTCAPTION)
@@ -387,7 +389,7 @@ LRESULT FloatingWindowContainer_OnNCLButtonDown(FloatingWindowContainer* pFloati
     return FALSE;
 }
 
-void FloatingWindowContainer_OnUnpinCommand(FloatingWindowContainer* pFloatingWindowContainer)
+void FloatingWindowContainer_TogglePin(FloatingWindowContainer* pFloatingWindowContainer)
 {
     if (pFloatingWindowContainer->bPinned)
     {
@@ -451,7 +453,7 @@ LRESULT FloatingWindowContainer_OnNCMouseMove(FloatingWindowContainer* pFloating
         if (sqrt(pow(x - xStart, 2) + pow(y - yStart, 2)) >= 100)
         {
             // ReleaseCapture();
-            FloatingWindowContainer_OnUnpinCommand(pFloatingWindowContainer);
+            FloatingWindowContainer_TogglePin(pFloatingWindowContainer);
             pFloatingWindowContainer->fCaptionUnpinStarted = FALSE;
         }
 
@@ -476,19 +478,23 @@ LRESULT FloatingWindowContainer_OnCommand(FloatingWindowContainer* pFloatingWind
 {
     switch (LOWORD(wParam))
     {
-    case IDM_UNPIN:
-    {
-        FloatingWindowContainer_OnUnpinCommand(pFloatingWindowContainer);
-    }
+    case IDM_AUTOHIDE:
+        FloatingWindowContainer_TogglePin(pFloatingWindowContainer);
         return 0;
-        break;
+
+    case IDM_DOCK:
+        if (!pFloatingWindowContainer->bPinned)
+            FloatingWindowContainer_TogglePin(pFloatingWindowContainer);
+        return 0;
+
+    case IDM_FLOAT:
+        if (pFloatingWindowContainer->bPinned)
+            FloatingWindowContainer_TogglePin(pFloatingWindowContainer);
+        return 0;
 
     case IDM_CLOSE:
-    {
         FloatingWindowContainer_OnCloseCommand(pFloatingWindowContainer);
-    }
         return 0;
-        break;
     }
 
     return DefWindowProc(pFloatingWindowContainer->base.hWnd, WM_COMMAND, wParam, lParam);

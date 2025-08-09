@@ -179,6 +179,9 @@ void DockManager_UpdateContentWindowPositions(DockManager* pMgr, DockSite* pSite
 DockPane* DockPane_Create(PaneType type, DockGroup* parentGroup);
 DockGroup* DockGroup_Create(DockGroup* parentGroup, GroupOrientation orientation);
 void DockManager_RemovePane(DockManager* pMgr, DockPane* pPane);
+void DockManager_FloatPane(DockManager* pMgr, DockPane* pPane);
+void DockManager_AutoHidePane(DockManager* pMgr, DockPane* pPane);
+void DockManager_PinPane(DockManager* pMgr, DockPane* pPane);
 
 // TODO: Add functions for list creation/destruction if not part of "util/list.h"
 // e.g. List* List_Create(); void List_Add(List* pList, void* pItem); etc.
