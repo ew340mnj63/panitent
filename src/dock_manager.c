@@ -1205,3 +1205,57 @@ DockPane* DockGroup_GetFirstPane(DockGroup* pGroup)
     // When the loop terminates, pNode is the first non-group child, which must be a pane.
     return (DockPane*)pNode;
 }
+
+// --- Pane State Operations ---
+
+void DockManager_AutoHidePane(DockManager* pMgr, DockPane* pPane)
+{
+    if (!pMgr || !pPane || !pPane->contents)
+        return;
+
+    size_t count = List_GetCount(pPane->contents);
+    for (size_t i = 0; i < count; ++i)
+    {
+        DockContent* pContent = *(DockContent**)List_GetAt(pPane->contents, (int)i);
+        if (!pContent || !pContent->canAutoHide)
+            continue;
+
+        pContent->state = CONTENT_STATE_AUTO_HIDDEN;
+        ShowWindow(pContent->hWnd, SW_HIDE);
+    }
+}
+
+void DockManager_PinPane(DockManager* pMgr, DockPane* pPane)
+{
+    if (!pMgr || !pPane || !pPane->contents)
+        return;
+
+    size_t count = List_GetCount(pPane->contents);
+    for (size_t i = 0; i < count; ++i)
+    {
+        DockContent* pContent = *(DockContent**)List_GetAt(pPane->contents, (int)i);
+        if (!pContent)
+            continue;
+
+        pContent->state = CONTENT_STATE_DOCKED;
+        ShowWindow(pContent->hWnd, SW_SHOW);
+    }
+}
+
+void DockManager_FloatPane(DockManager* pMgr, DockPane* pPane)
+{
+    if (!pMgr || !pPane || !pPane->contents)
+        return;
+
+    size_t count = List_GetCount(pPane->contents);
+    for (size_t i = 0; i < count; ++i)
+    {
+        DockContent* pContent = *(DockContent**)List_GetAt(pPane->contents, (int)i);
+        if (!pContent || !pContent->canFloat)
+            continue;
+
+        SetParent(pContent->hWnd, NULL);
+        pContent->state = CONTENT_STATE_FLOATING;
+        ShowWindow(pContent->hWnd, SW_SHOW);
+    }
+}
